@@ -1,14 +1,17 @@
 {{ range $upstream := lsdir "/services" }}
+{{ if ne $upstream "nginx" }}
 upstream {{ base $upstream }} {
     {{$server := printf "/services/%s/*" $upstream}}{{range gets $server}}
     server {{ .Value }};
     {{end}}
 }
 {{ end }}
+{{ end }}
+
 
 server {
   listen 80;
-  server_name ~^(?P<app_domain>.+)\.core\.twnel\.com;
+  server_name ~^(?<app_domain>.+)\.core\.twnel\.com$;
 
   location / {
     proxy_pass http://$app_domain;
