@@ -1,0 +1,20 @@
+server {
+    listen 80;
+    server_name ~^(?<app_domain>.+?)(\.beta)?\.twnel\.com$;
+
+
+    # We speak nginx to use SkyDNS
+    resolver 172.17.42.1 valid=5s;
+    resolver_timeout 5s;
+
+    # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
+    set $dns $app_domain.skydns.local;
+
+    location / {
+        proxy_pass http://$dns;
+        proxy_redirect off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}

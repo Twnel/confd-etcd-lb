@@ -1,0 +1,11 @@
+[Unit]
+Description=nginx
+
+[Service]
+EnvironmentFile=/etc/environment
+ExecStartPre=/usr/bin/docker pull twnel/nginx-sky
+ExecStart=/usr/bin/docker run --rm --name nginx -p 80:80 -e HOST_IP=${COREOS_PRIVATE_IPV4} twnel/nginx-sky
+ExecStop=/usr/bin/docker kill nginx
+
+[X-Fleet]
+X-Conflicts=nginx.service
