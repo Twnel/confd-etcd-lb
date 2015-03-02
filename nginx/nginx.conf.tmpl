@@ -11,7 +11,7 @@ upstream {{ base $upstream }} {
 
 server {
   listen 80;
-  server_name ~^(?<app_domain>.+?)(\.core)?\.twnel\.com$;
+  server_name ~^(?<app_domain>.+?)(\.{{getenv "DOMAIN"}})?\.twnel\.com$;
 
   location / {
     proxy_pass http://$app_domain;

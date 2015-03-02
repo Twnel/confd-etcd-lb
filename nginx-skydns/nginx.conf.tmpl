@@ -1,10 +1,10 @@
 server {
     listen 80;
-    server_name ~^(?<app_domain>.+?)(\.beta)?\.twnel\.com$;
+    server_name ~^(?<app_domain>.+?)(\.{{getenv "DOMAIN"}})?\.twnel\.com$;
 
 
     # We speak nginx to use SkyDNS
-    resolver 127.0.0.1 valid=5s;
+    resolver {{getenv "HOST_IP"}} valid=5s;
     resolver_timeout 5s;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
