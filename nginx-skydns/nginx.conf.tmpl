@@ -1,5 +1,5 @@
 server {
-    listen 80;
+    listen 8080;
     server_name ~^(?<app_domain>.+?)(\.{{getenv "DOMAIN"}})?\.twnel\.com$;
 
 
@@ -11,7 +11,7 @@ server {
     set $dns $app_domain.skydns.local;
 
     location / {
-        proxy_pass http://$dns:8080;
+        proxy_pass http://$dns;
         proxy_redirect off;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
