@@ -1,3 +1,11 @@
+{{ range $upstream := lsdir "/skydns/local/skydns/ui" }}
+upstream {{ base $upstream }} {
+    {{$server := printf "/skydns/local/skydns/ui/%s/*" $upstream}}{{range gets $server}}
+    server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
+    {{end}}
+}
+{{ end }}
+
 server {
     listen 80;
     server_name ~^(?<app_domain>.+?)(\.{{getenv "DOMAIN"}})?\.twnel\.com$;
@@ -8,10 +16,10 @@ server {
     resolver_timeout 5s;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
-    set $dns $app_domain.ui.skydns.local;
+    # set $dns $app_domain.ui.skydns.local;
 
     location / {
-        proxy_pass http://$dns;
+        proxy_pass http://$app_domain;
         proxy_redirect off;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
