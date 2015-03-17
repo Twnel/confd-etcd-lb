@@ -1,5 +1,5 @@
 [template]
-keys        = [ "skydns" ]
+keys        = [ "skydns/local/skydns/ui" ]
 owner       = "nginx"
 mode        = "0644"
 src         = "nginx.conf.tmpl"
