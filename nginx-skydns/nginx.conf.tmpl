@@ -8,7 +8,7 @@ server {
     resolver_timeout 5s;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
-    set $dns $app_domain.skydns.local;
+    set $dns $app_domain.ui.skydns.local;
 
     location / {
         proxy_pass http://$dns;
