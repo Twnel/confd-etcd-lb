@@ -31,7 +31,7 @@ organizationalUnitName=
 emailAddress=
 "
 
-echo "admin:$(openssl passwd -apr1 \"${HTPASSWD}\")" > /etc/nginx/.htpasswd
+echo "admin:$(openssl passwd -apr1 ${HTPASSWD})" > /etc/nginx/.htpasswd
 openssl req -subj "$(echo -n "$SUBJ" | tr "\n" "/")" -x509 -nodes -days 365 -newkey rsa:2048 -keyout "$SSL_DIR/default.key" -out "$SSL_DIR/default.crt" -passin pass:$PASSPHRASE
 
 echo "[nginx] booting container. ETCD: $ETCD"
