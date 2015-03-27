@@ -1,6 +1,57 @@
-{{ range $upstream := lsdir "/skydns/local/skydns/ui" }}
-upstream {{ base $upstream }} {
-    {{$server := printf "/skydns/local/skydns/ui/%s/*" $upstream}}{{range gets $server}}
+# If we receive X-Forwarded-Proto, pass it through; otherwise, pass along the
+# scheme used to connect to this server
+map $http_x_forwarded_proto $proxy_x_forwarded_proto {
+  default $http_x_forwarded_proto;
+  ''      $scheme;
+}
+
+# If we receive Upgrade, set Connection to "upgrade"; otherwise, delete any
+# Connection header that may have been passed to this server
+map $http_upgrade $proxy_connection {
+  default upgrade;
+  ''      '';
+}
+
+gzip_types text/plain text/css application/javascript application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+
+log_format vhost '$host $remote_addr - $remote_user [$time_local] '
+                 '"$request" $status $body_bytes_sent '
+                 '"$http_referer" "$http_user_agent"';
+
+access_log /var/log/nginx/access.log vhost;
+error_log /var/log/nginx/error.log;
+
+# HTTP 1.1 support
+proxy_http_version 1.1;
+proxy_buffering off;
+proxy_set_header Host $http_host;
+proxy_set_header Upgrade $http_upgrade;
+proxy_set_header Connection $proxy_connection;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $proxy_x_forwarded_proto;
+
+{{ $domain := (getenv "DOMAIN") }}
+
+{{ range $upstream := lsdir (printf "/skydns/local/%s/ui" $domain) }}
+upstream {{ base $upstream }}.ui {
+    {{$server := (printf "/skydns/local/%s/ui/%s/*" $domain $upstream)}}{{range gets $server}}
+    server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
+    {{end}}
+}
+{{ end }}
+
+{{ range $upstream := lsdir (printf "/skydns/local/%s/ssl" $domain) }}
+upstream {{ base $upstream }}.ssl {
+    {{$server := (printf "/skydns/local/%s/ssl/%s/*" $domain $upstream)}}{{range gets $server}}
+    server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
+    {{end}}
+}
+{{ end }}
+
+{{ range $upstream := lsdir (printf "/skydns/local/%s/pwd" $domain) }}
+upstream {{ base $upstream }}.pwd {
+    {{$server := (printf "/skydns/local/%s/pwd/%s/*" $domain $upstream)}}{{range gets $server}}
     server {{$data := json .Value}}{{$data.host}}:{{$data.port}};
     {{end}}
 }
@@ -8,8 +59,7 @@ upstream {{ base $upstream }} {
 
 server {
     listen 80;
-    server_name ~^(?<app_domain>.+?)(\.{{getenv "DOMAIN"}})?\.twnel\.com$;
-
+    server_name ~^(?<app_domain>.+?)(\.{{$domain}})?\.twnel\.com$;
 
     # We speak nginx to use SkyDNS
     resolver {{getenv "HOST_IP"}} valid=5s;
@@ -19,10 +69,56 @@ server {
     # set $dns $app_domain.ui.skydns.local;
 
     location / {
-        proxy_pass http://$app_domain;
+        proxy_pass http://$app_domain.ui;
         proxy_redirect off;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+
+server {
+    listen 9080;
+    server_name ~^(?<app_domain>.+?)(\.{{$domain}})?\.twnel\.com$;
+
+    # We speak nginx to use SkyDNS
+    resolver {{getenv "HOST_IP"}} valid=5s;
+    resolver_timeout 5s;
+
+    # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
+    # set $dns $app_domain.pwd.skydns.local;
+
+    location / {
+        proxy_pass http://$app_domain.pwd;
+        proxy_redirect off;
+		auth_basic "Restricted $app_domain";
+		auth_basic_user_file "/etc/nginx/.htpasswd";
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name ~^(?<app_domain>.+?)(\.{{$domain}})?\.twnel\.com$;
+	return 503;
+
+	ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+	ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA;
+
+	ssl_prefer_server_ciphers on;
+	ssl_session_timeout 5m;
+	ssl_session_cache shared:SSL:50m;
+
+	ssl_certificate /etc/nginx/certs/default.crt;
+	ssl_certificate_key /etc/nginx/certs/default.key;
+
+	add_header Strict-Transport-Security "max-age=31536000";
+	
+    # We speak nginx to use SkyDNS
+    resolver {{getenv "HOST_IP"}} valid=5s;
+    resolver_timeout 5s;
+
+    # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
+    # set $dns $app_domain.ssl.skydns.local;
+
+    location / {
+        proxy_pass http://$app_domain.ssl;
+        proxy_redirect off;
     }
 }

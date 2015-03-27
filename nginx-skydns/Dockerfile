@@ -27,5 +27,7 @@ ADD ./nginx.toml /etc/confd/conf.d/nginx.toml
 ADD ./boot.sh /opt/boot.sh
 RUN chmod +x /opt/boot.sh
 
+VOLUME ["/etc/nginx/certs"]
+
 # Run the boot script
 CMD /opt/boot.sh
