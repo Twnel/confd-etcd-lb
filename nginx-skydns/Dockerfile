@@ -21,11 +21,13 @@ RUN chmod +x /usr/local/bin/confd
 # Create directories
 RUN mkdir -p /etc/confd/conf.d
 RUN mkdir -p /etc/confd/templates
+RUN mkdir -p /etc/nginx/includes
 
 # Add confd files
 ADD *.tmpl /etc/confd/templates/
 ADD *.toml /etc/confd/conf.d/
 ADD nginx.conf /etc/nginx/
+ADD includes/app.conf-cors /etc/nginx/includes/
 
 # Remove default site
 # RUN rm -f /etc/nginx/sites-enabled/default

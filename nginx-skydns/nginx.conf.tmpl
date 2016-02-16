@@ -90,7 +90,7 @@ upstream {{ base $upstream }}.sticky.pwd {
 server {
     listen 80;
     listen [::]:80;
-    server_name ~^((?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)?\.)?{{$region}}\.{{$cluster}}\.{{$domain}}$;
+    server_name ~^((?<app_domain>[^\.]+?)(?<app_sticky>\.sticky)?\.)?{{$region}}\.{{$cluster}}\.({{$domain}}|local)$;
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
     # set $dns $app_domain.ui.local;
@@ -98,110 +98,20 @@ server {
     #
     # Wide-open CORS config for nginx
     #
+
     set $origin_domain {{$domain}};
     location / {
         if ($http_origin ~ "^https?://(.*?\.{{$domain}})$") {
-            set $origin_domain '*';
+            set $origin_domain $http_origin;
         }
-        
-        if ($request_method = 'OPTIONS') {
-           add_header 'Access-Control-Allow-Origin' $origin_domain;
-           #
-           # Om nom nom cookies
-           #
-           add_header 'Access-Control-Allow-Credentials' 'true';
-	   add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
-           #
-           # Custom headers and headers various browsers *should* be OK with but aren't
-           #
-	   add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,twnel-app-key,twnel-app-token,apikey,apitoken';
-           #
-           # Tell client that this pre-flight info is valid for 20 days
-           #
-           add_header 'Access-Control-Max-Age' 1728000;
-           add_header 'Content-Type' 'text/plain charset=UTF-8';
-           add_header 'Content-Length' 0;
-           return 204;
-        }
-	if ($request_method = 'GET') {
-	    add_header 'Access-Control-Allow-Origin' $origin_domain;
-	    add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
-	    add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,twnel-app-key,twnel-app-token,apikey,apitoken';
-	    add_header 'Access-Control-Allow-Credentials' 'true';
-	}
-	if ($request_method = 'POST') {
-	    add_header 'Access-Control-Allow-Origin' $origin_domain;
-	    add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
-	    add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,twnel-app-key,twnel-app-token,apikey,apitoken';
-	    add_header 'Access-Control-Allow-Credentials' 'true';
-	}
-	if ($request_method = 'PUT') {
-	    add_header 'Access-Control-Allow-Origin' $origin_domain;
-	    add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
-	    add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,twnel-app-key,twnel-app-token,apikey,apitoken';
-	    add_header 'Access-Control-Allow-Credentials' 'true';
-	}
-	if ($request_method = 'DELETE') {
-	    add_header 'Access-Control-Allow-Origin' $origin_domain;
-	    add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
-	    add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,twnel-app-key,twnel-app-token,apikey,apitoken';
-	    add_header 'Access-Control-Allow-Credentials' 'true';
-	}
+	include includes/app.conf-cors;
     }
 
     location ~ /(?<app>([^/]+|.*?$))/? {
         if ($http_origin ~ "^https?://(.*?\.{{$domain}})$") {
-            set $origin_domain '*';
+            set $origin_domain $http_origin;
         }
-	proxy_hide_header 'Access-Control-Allow-Origin';
-
-	proxy_hide_header 'Access-Control-Allow-Methods';
-
-	proxy_hide_header 'Access-Control-Allow-Headers';
-        if ($request_method = 'OPTIONS') {
-           add_header 'Access-Control-Allow-Origin' $origin_domain;
-           #
-           # Om nom nom cookies
-           #
-           add_header 'Access-Control-Allow-Credentials' 'true';
-	   add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
-           #
-           # Custom headers and headers various browsers *should* be OK with but aren't
-           #
-	   add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,twnel-app-key,twnel-app-token,apikey,apitoken';
-           #
-           # Tell client that this pre-flight info is valid for 20 days
-           #
-           add_header 'Access-Control-Max-Age' 1728000;
-           add_header 'Content-Type' 'text/plain charset=UTF-8';
-           add_header 'Content-Length' 0;
-           return 204;
-        }
-	if ($request_method = 'GET') {
-	    add_header 'Access-Control-Allow-Origin' $origin_domain;
-	    add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
-	    add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,twnel-app-key,twnel-app-token,apikey,apitoken';
-	    add_header 'Access-Control-Allow-Credentials' 'true';
-	}
-	if ($request_method = 'POST') {
-	    add_header 'Access-Control-Allow-Origin' $origin_domain;
-	    add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
-	    add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,twnel-app-key,twnel-app-token,apikey,apitoken';
-	    add_header 'Access-Control-Allow-Credentials' 'true';
-	}
-	if ($request_method = 'PUT') {
-	    add_header 'Access-Control-Allow-Origin' $origin_domain;
-	    add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
-	    add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,twnel-app-key,twnel-app-token,apikey,apitoken';
-	    add_header 'Access-Control-Allow-Credentials' 'true';
-	}
-	if ($request_method = 'DELETE') {
-	    add_header 'Access-Control-Allow-Origin' $origin_domain;
-	    add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
-	    add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,twnel-app-key,twnel-app-token,apikey,apitoken';
-	    add_header 'Access-Control-Allow-Credentials' 'true';
-	}
-
+	include includes/app.conf-cors;
         set $api $app;
         if ($app_domain ~ ".+") {
            set $api $app_domain;
