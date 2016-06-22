@@ -1,9 +1,23 @@
-FROM phusion/baseimage:latest
+FROM haproxy
 MAINTAINER Ericson Cepeda <ericson@picorb.com>
 
 # Install haproxy
 RUN apt-get update
-RUN apt-get install -y curl
+
+RUN         apt-get install -y curl wget python-pip ca-certificates openssl tar && \
+            wget https://github.com/coreos/etcd/releases/download/v2.0.10/etcd-v2.0.10-linux-amd64.tar.gz && \
+            tar xzvf etcd-v2.0.10-linux-amd64.tar.gz && \
+            mv etcd-v2.0.10-linux-amd64/etcd* /bin/
+VOLUME      /data
+
+ADD build/run-etcd.sh /bin/run.sh
+RUN chmod +x /bin/run.sh
+
+ADD requirements.txt /requirements.txt
+RUN pip install -r /requirements.txt
+
+RUN mkdir -p /var/log/supervisor
+ADD build/supervisord.conf /usr/local/supervisord.conf
 
 # Install confd
 RUN curl -L https://github.com/kelseyhightower/confd/releases/download/v0.10.0/confd-0.10.0-linux-amd64 -o confd
@@ -29,4 +43,4 @@ RUN chmod +x /opt/boot.sh
 VOLUME ["/etc/haproxy/certs"]
 
 # Run the boot script
-CMD /opt/boot.sh
+CMD ["/usr/local/bin/supervisord", "-n"]

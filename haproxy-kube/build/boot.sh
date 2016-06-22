@@ -5,7 +5,7 @@ set -eo pipefail
 
 export ETCD_PORT=${ETCD_PORT:-2379}
 export HOST_IP=${HOST_IP:-172.17.42.1}
-export ETCD=$HOST_IP:2379
+export ETCD=$HOST_IP:$ETCD_PORT
 export DOMAIN=${DOMAIN:-example.com}
 export REGION=${REGION:-api}
 export CLUSTER=${CLUSTER:-beta}
