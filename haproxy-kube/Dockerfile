@@ -37,10 +37,12 @@ ADD build/haproxy.cfg /etc/haproxy/
 # RUN rm -f /etc/haproxy/sites-enabled/default
 
 # Add boot script
-ADD ./boot.sh /opt/boot.sh
+ADD build/boot.sh /opt/boot.sh
 RUN chmod +x /opt/boot.sh
+ADD build/dns_check.py /opt/dns_check.py
+RUN chmod +x /opt/dns_check.py
 
-VOLUME ["/etc/haproxy/certs"]
+VOLUME ["/etc/haproxy/certs", "/var/log/etcd"]
 
 # Run the boot script
 CMD ["/usr/local/bin/supervisord", "-n"]
