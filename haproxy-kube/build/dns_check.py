@@ -8,26 +8,30 @@ import os
 import time
 import subprocess
 import json
-
+from pprint import pformat, pprint
 # Basic query
 def populate_etcd():
-    # http://www.skippbox.com/using-a-kubernetes-api-python-client/
-    # add to Dockerfile
-    # curl -L https://storage.googleapis.com/kubernetes-release/release/v1.2.4/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl \
-    # && chmod +x /usr/local/bin/kubectl \
-
-    # modify DNS check to kube check
-    # kubectl get -o json services
-    #a = subprocess.Popen("kubectl get -o json services",stdout=subprocess.PIPE, shell=True)
-    #b = str(a.stdout.read())
-    #json.loads(b)
     client = etcd.Client(host=os.getenv('ETCD_SERVICE_HOST', 'etcd'), port=int(os.getenv('ETCD_SERVICE_PORT', 2379)))
     while True:
-        for rdata in dns.resolver.query(os.getenv('DNS_DOMAIN', 'cluster.local'), 'SRV') :
-            m = re.search(r'((\d+\s)+)(.*)', str(rdata), re.DOTALL)
-            if m:
-                parts = m.group(3).split('.')[1:3]
-                client.set('/skydns/local/{}/{}/{}'.format(os.getenv('CLUSTER', 'beta'), parts[1], parts[0]), str({'host': '.'.join(parts)}))
+        # modify DNS check to kube check
+        # kubectl get -o json services
+        kubectl_call = subprocess.Popen("kubectl get -o json services", stdout=subprocess.PIPE, shell=True)
+        kubectl_str = str(kubectl_call.stdout.read())
+        kubectl_services = json.loads(kubectl_str)
+        for service in kubectl_services['items']:
+            for match_port in (port for port in service['spec']['ports'] if 'internal' not in port['name']):
+                pprint(client.set(
+                    '/skydns/local/{}/{}/{}'.format(
+                        service['metadata']['app_env'] if 'app_env' in service['metadata'] else 'beta',
+                        service['metadata']['namespace'],
+                        match_port['name']
+                    ),
+                    str({
+                        'host': '{}.{}'.format(service['metadata']['name'], service['metadata']['namespace']),
+                        'port': match_port['port']
+                    })
+                ))
+
         time.sleep(os.getenv('ETCD_SERVICE_INTERVAL', 10))
 
 if __name__ == '__main__':

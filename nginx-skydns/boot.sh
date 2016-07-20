@@ -3,9 +3,11 @@
 # Fail hard and fast
 set -eo pipefail
 
-export ETCD_PORT=${ETCD_PORT:-2379}
-export HOST_IP=${HOST_IP:-172.17.42.1}
-export ETCD=$HOST_IP:2379
+export ETCD_SERVICE_PORT=${ETCD_SERVICE_PORT:-2379}
+export ETCD_SERVICE_HOST=${ETCD_SERVICE_HOST:-127.0.0.1}
+export ETCD_RESOLVE=$(host ${ETCD_SERVICE_HOST} | awk '/has address/ { print $4 }')
+export ETCD_SERVICE_RESOLVE=${ETCD_RESOLVE:-${ETCD_SERVICE_HOST}}
+export ETCD_SERVICE_ADDR=${ETCD_SERVICE_RESOLVE}:${ETCD_SERVICE_PORT}
 export DOMAIN=${DOMAIN:-example.com}
 export REGION=${REGION:-api}
 export CLUSTER=${CLUSTER:-beta}
@@ -39,13 +41,13 @@ openssl req -subj "$(echo -n "$SUBJ" | tr "\n" "/")" -x509 -nodes -days 365 -new
 echo "[nginx] booting container. ETCD: $ETCD"
 
 # Loop until confd has updated the nginx config
-until confd -onetime -node $ETCD; do
+until confd -onetime -node $ETCD_SERVICE_ADDR; do
   echo "[nginx] waiting for confd to refresh nginx.conf"
   sleep 5
 done
 
 # Run confd in the background to watch the upstream servers
-confd -interval 10 -node $ETCD &
+confd -interval 10 -node $ETCD_SERVICE_ADDR &
 echo "[nginx] confd is listening for changes on etcd..."
 
 # Start nginx

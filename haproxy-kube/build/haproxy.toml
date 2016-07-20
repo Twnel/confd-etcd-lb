@@ -1,5 +1,5 @@
 [template]
-keys        = [ "/services" ]
+keys        = [ "/skydns/local" ]
 owner       = "haproxy"
 mode        = "0644"
 src         = "haproxy.conf.tmpl"

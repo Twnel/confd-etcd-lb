@@ -13,6 +13,10 @@ VOLUME      /data
 ADD build/run-etcd.sh /bin/run.sh
 RUN chmod +x /bin/run.sh
 
+# http://www.skippbox.com/using-a-kubernetes-api-python-client/
+RUN curl -L https://storage.googleapis.com/kubernetes-release/release/v1.2.4/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl && \
+    chmod +x /usr/local/bin/kubectl
+
 ADD requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 
@@ -31,7 +35,7 @@ RUN mkdir -p /etc/confd/templates
 # Add confd files
 ADD build/*.tmpl /etc/confd/templates/
 ADD build/*.toml /etc/confd/conf.d/
-ADD build/haproxy.cfg /etc/haproxy/
+#ADD build/haproxy.cfg /etc/haproxy/
 
 # Remove default site
 # RUN rm -f /etc/haproxy/sites-enabled/default
