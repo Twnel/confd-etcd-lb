@@ -21,10 +21,12 @@ def populate_etcd():
         for service in kubectl_services['items']:
             for match_port in (port for port in service['spec']['ports'] if 'internal' not in port['name']):
                 pprint(client.set(
-                    '/skydns/local/{}/{}/{}'.format(
+                    '/skydns/local/{}/{}/{}/{}:{}'.format(
                         service['metadata']['app_env'] if 'app_env' in service['metadata'] else 'beta',
                         service['metadata']['namespace'],
-                        match_port['name']
+                        match_port['name'],
+                        service['spec']['clusterIP'],
+                        match_port['nodePort']
                     ),
                     str({
                         'host': '{}.{}'.format(service['metadata']['name'], service['metadata']['namespace']),
