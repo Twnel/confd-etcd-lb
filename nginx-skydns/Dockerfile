@@ -11,7 +11,7 @@ RUN  apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ABF5BD827BD9BF62 &
      add-apt-repository "deb http://nginx.org/packages/mainline/ubuntu/ trusty nginx" && \
      add-apt-repository -s "deb http://nginx.org/packages/mainline/ubuntu/ trusty nginx"
 RUN apt-get update
-RUN apt-get install -y nginx curl
+RUN apt-get install -y nginx curl host
 
 # Install confd
 RUN curl -L https://github.com/kelseyhightower/confd/releases/download/v0.10.0/confd-0.10.0-linux-amd64 -o confd
