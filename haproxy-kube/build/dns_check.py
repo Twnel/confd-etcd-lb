@@ -15,20 +15,20 @@ def populate_etcd():
     while True:
         # modify DNS check to kube check
         # kubectl get -o json services
-        kubectl_call = subprocess.Popen("kubectl get -o json services", stdout=subprocess.PIPE, shell=True)
+        kubectl_call = subprocess.Popen("kubectl get --all-namespaces -o json services", stdout=subprocess.PIPE, shell=True)
         kubectl_str = str(kubectl_call.stdout.read())
         kubectl_services = json.loads(kubectl_str)
         for service in kubectl_services['items']:
-            for match_port in (port for port in service['spec']['ports'] if 'internal' not in port['name']):
+            for match_port in (port for port in service['spec']['ports'] if 'name' in port and 'internal' not in port['name']):
                 pprint(client.set(
                     '/skydns/local/{}/{}/{}/{}:{}'.format(
                         service['metadata']['app_env'] if 'app_env' in service['metadata'] else 'beta',
                         service['metadata']['namespace'],
                         match_port['name'],
                         service['spec']['clusterIP'],
-                        match_port['nodePort']
+                        match_port['port']
                     ),
-                    str({
+                    json.dumps({
                         'host': '{}.{}'.format(service['metadata']['name'], service['metadata']['namespace']),
                         'port': match_port['port']
                     })
