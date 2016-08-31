@@ -51,9 +51,10 @@ def populate_etcd():
         
         try:
             etcd_leaves = client.read('/skydns/local/{}'.format(os.getenv('CLUSTER', 'beta')), recursive=True).leaves
-            for key in set((app.key for app in etcd_leaves)).difference(set_etcd_services()):
-                if ':' in app.key.split('/')[-1]:
-                    client.delete(key)
+            for key in set(
+                (app.key for app in etcd_leaves if ':' in app.key.split('/')[-1])).difference(
+                    set_etcd_services()):
+                client.delete(key)
         except etcd.EtcdKeyNotFound:
             pprint('NO key')
 
