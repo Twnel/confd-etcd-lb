@@ -50,8 +50,8 @@ def populate_etcd():
                     pprint('Error: {}'.format(match_port['name']))
         
         try:
-            etcd_nodes = client.read('/skydns/local/{}'.format(os.getenv('CLUSTER', 'beta')), recursive=True)
-            for key in set((app.key for app in etcd_nodes.leaves)).difference(set_etcd_services()):
+            etcd_leaves = client.read('/skydns/local/{}'.format(os.getenv('CLUSTER', 'beta')), recursive=True).leaves
+            for key in set((app.key for app in etcd_leaves)).difference(set_etcd_services()):
                 if ':' in app.key.split('/')[-1]:
                     client.delete(key)
         except etcd.EtcdKeyNotFound:
