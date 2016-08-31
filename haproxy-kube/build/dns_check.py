@@ -38,12 +38,13 @@ def populate_etcd():
                             pod['status']['podIP'],
                             match_port['port']
                         )
-                        pprint(client.set(
+                        pprint(client.write(
                             new_service,
                             json.dumps({
                                 'host': pod['status']['podIP'],
                                 'port': match_port['port']
-                            })
+                            }),
+                            prevExist = False
                         ))
                         yield new_service
                 except KeyError:
