@@ -32,32 +32,36 @@ def populate_etcd():
                     kubectl_pods = json.loads(kubectl_str_pods)
                     for pod in kubectl_pods['items']:
                         new_service = '/skydns/local/{}/{}/{}/{}:{}'.format(
-                            service['metadata']['app_env'] if 'app_env' in service['metadata'] else 'beta',
+                            service['metadata']['annotations']['app_env'] if 'annotations' in service['metadata'] and 'app_env' in service['metadata']['annotations'] else 'beta',
                             service['metadata']['namespace'],
                             match_port['name'],
                             pod['status']['podIP'],
                             match_port['port']
                         )
-                        pprint(client.write(
-                            new_service,
-                            json.dumps({
-                                'host': pod['status']['podIP'],
-                                'port': match_port['port']
-                            }),
-                            prevExist = False
-                        ))
+                        try:
+                            pprint(client.write(
+                                new_service,
+                                json.dumps({
+                                    'host': pod['status']['podIP'],
+                                    'port': match_port['port']
+                                }),
+                                prevExist = False
+                            ))
+                        except etcd.EtcdAlreadyExist:
+                            pprint('Key: {}, {}'.format(new_service))
                         yield new_service
-                except KeyError:
-                    pprint('Error: {}'.format(match_port['name']))
-        
+                except KeyError as e:
+                    pprint('Error: {}, {}'.format(match_port['name'], e.message))
+        cluster_key = '/skydns/local/{}'.format(os.getenv('CLUSTER', 'beta'))
         try:
-            etcd_leaves = client.read('/skydns/local/{}'.format(os.getenv('CLUSTER', 'beta')), recursive=True).leaves
+            etcd_leaves = client.read(cluster_key, recursive=True).leaves
             for key in set(
                 (app.key for app in etcd_leaves if ':' in app.key.split('/')[-1])).difference(
                     set_etcd_services()):
                 client.delete(key)
         except etcd.EtcdKeyNotFound:
-            pprint('NO key')
+            next(set_etcd_services())
+            pprint('NO key: {}'.format(cluster_key))
 
         time.sleep(os.getenv('ETCD_SERVICE_INTERVAL', 10))
 
