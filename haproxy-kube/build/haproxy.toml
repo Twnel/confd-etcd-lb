@@ -1,0 +1,8 @@
+[template]
+keys        = [ "/skydns/local" ]
+owner       = "haproxy"
+mode        = "0644"
+src         = "haproxy.conf.tmpl"
+dest        = "/etc/haproxy/haproxy.cfg"
+check_cmd   = "/usr/sbin/haproxy -c -f {{ .dest }}"
+reload_cmd  = "/usr/sbin/service haproxy reload"

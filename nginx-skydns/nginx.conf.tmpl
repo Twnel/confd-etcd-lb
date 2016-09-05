@@ -31,6 +31,9 @@ proxy_set_header X-Real-IP $remote_addr;
 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 proxy_set_header X-Forwarded-Proto $proxy_x_forwarded_proto;
 
+proxy_connect_timeout 300s;
+proxy_read_timeout 300s;
+
 client_max_body_size 0;
 
 # Nginx to use SkyDNS
@@ -208,7 +211,7 @@ server {
     # set $dns $app_domain.pwd.local;
 
     location / {
-        proxy_pass http://$app_domain$app_sticky.pwd;
+        proxy_pass http://$app_domain.pwd;
         proxy_redirect off;
 		auth_basic "Restricted $app_domain";
 		auth_basic_user_file "/etc/nginx/.htpasswd";

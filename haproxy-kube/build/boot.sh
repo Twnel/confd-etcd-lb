@@ -18,7 +18,7 @@ export HTPASSWD="$(openssl passwd -apr1 ${HTPASSWD:-password})"
 
 # Specify where we will install
 # the xip.io certificate
-SSL_DIR="/etc/nginx/certs"
+SSL_DIR="/etc/haproxy/certs"
 
 # Set the wildcarded domain
 # we want to use
@@ -38,7 +38,7 @@ organizationalUnitName=
 emailAddress=
 "
 
-echo "admin:${HTPASSWD}" > /etc/nginx/.htpasswd
+echo "admin:${HTPASSWD}" > /etc/haproxy/.htpasswd
 openssl req -subj "$(echo -n "$SUBJ" | tr "\n" "/")" -x509 -nodes -days 365 -newkey rsa:2048 -keyout "$SSL_DIR/default.key" -out "$SSL_DIR/default.crt" -passin pass:$PASSPHRASE
 
 echo "[nginx] booting container. ETCD: $ETCD_SERVICE_ADDR"
@@ -58,11 +58,11 @@ confd_interval () {
   }; done;
 }
 nohup confd_interval 2>&1 &
-echo "[nginx] confd is listening for changes on etcd..."
+echo "[haproxy] confd is listening for changes on etcd..."
 
-# Start nginx
-echo "[nginx] starting nginx service..."
-service nginx start
+# Start haproxy
+echo "[haproxy] starting haproxy service..."
+exec /usr/sbin/haproxy -f /etc/haproxy/haproxy.cfg
 
-# Tail all nginx log files
-tail -f /var/log/nginx/*.log
+# Tail all haproxy log files
+tail -f /var/log/haproxy/*.log

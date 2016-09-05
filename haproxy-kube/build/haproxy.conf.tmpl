@@ -1,0 +1,11 @@
+resolvers dns
+  nameserver public-0  kube-dns.kube-system:53
+  hold valid 1s
+
+frontend http
+  bind *:8000
+  default_backend site-backend
+
+backend site-backend
+  balance leastconn
+  server site sub.example.com:80 resolvers dns check inter 1000
