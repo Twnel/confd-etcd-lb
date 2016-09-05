@@ -31,8 +31,13 @@ def populate_etcd():
                     kubectl_str_pods = str(kubectl_get_pods.stdout.read())
                     kubectl_pods = json.loads(kubectl_str_pods)
                     for pod in kubectl_pods['items']:
+                        try:
+                            print service['metadata']
+                            app_env = service['metadata']['annotations']['app_env']
+                        except KeyError:
+                            app_env = 'beta'
                         new_service = '/skydns/local/{}/{}/{}/{}:{}'.format(
-                            service['metadata']['annotations']['app_env'] if 'annotations' in service['metadata'] and 'app_env' in service['metadata']['annotations'] else 'beta',
+                            app_env,
                             service['metadata']['namespace'],
                             match_port['name'],
                             pod['status']['podIP'],
@@ -48,7 +53,7 @@ def populate_etcd():
                                 prevExist = False
                             ))
                         except etcd.EtcdAlreadyExist:
-                            pprint('Key: {}, {}'.format(new_service))
+                            pprint('Key exists: {}'.format(new_service))
                         yield new_service
                 except KeyError as e:
                     pprint('Error: {}, {}'.format(match_port['name'], e.message))
@@ -60,7 +65,7 @@ def populate_etcd():
                     set_etcd_services()):
                 client.delete(key)
         except etcd.EtcdKeyNotFound:
-            next(set_etcd_services())
+            client.write(cluster_key, None, dir=True)
             pprint('NO key: {}'.format(cluster_key))
 
         time.sleep(os.getenv('ETCD_SERVICE_INTERVAL', 10))
