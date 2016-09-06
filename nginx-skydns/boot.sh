@@ -57,7 +57,7 @@ confd_interval () {
     confd -onetime -node $ETCD_SERVICE_ADDR; sleep 10;
   }; done;
 }
-nohup confd_interval 2>&1 &
+confd_interval 2>&1 &
 echo "[nginx] confd is listening for changes on etcd..."
 
 # Start nginx
