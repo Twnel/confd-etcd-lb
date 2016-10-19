@@ -54,7 +54,7 @@ echo "[nginx] waiting for confd to refresh nginx.conf"
 confd_interval () {
   while true; do {
     confd_resolve
-    confd -onetime -node $ETCD_SERVICE_ADDR; sleep 10;
+    confd -onetime -node $ETCD_SERVICE_ADDR || true; sleep 10;
   }; done;
 }
 confd_interval 2>&1 &
