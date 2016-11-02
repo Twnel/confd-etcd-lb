@@ -32,7 +32,7 @@ def populate_etcd():
                     kubectl_pods = json.loads(kubectl_str_pods)
                     for pod in kubectl_pods['items']:
                         try:
-                            print service['metadata']
+                            pprint(service['metadata'])
                             app_env = service['metadata']['annotations']['app_env']
                         except KeyError:
                             app_env = 'beta'
@@ -54,6 +54,10 @@ def populate_etcd():
                             ))
                         except etcd.EtcdAlreadyExist:
                             pprint('Key exists: {}'.format(new_service))
+                        except etcd.EtcdException as e:
+                            pprint('etcd error: {} ::: {}'.format(e.message, new_service))
+                        except etcd.Exception as e:
+                            pprint('Unhandled exception: {} ::: {}'.format(e.message, new_service))
                         yield new_service
                 except KeyError as e:
                     pprint('Error: {}, {}'.format(match_port['name'], e.message))
