@@ -12,9 +12,12 @@ from pprint import pformat, pprint
 # Basic query
 def loop_services(kubectl_services):
     for service in kubectl_services:
-        subsets = service['subsets']
-        for match_port in (port for port in subsets['ports'] if 'name' in port and 'internal' not in port['name']):
-            yield service, match_port, subsets
+        try:
+            subsets = service['subsets'][0]
+            for match_port in (port for port in subsets['ports'] if 'internal' not in port['name']):
+                yield service, match_port, subsets
+        except Exception as e:
+            pprint('Service not configured: {} ::: {}'.format(service['metadata']['name'], e.message))
 
 def populate_etcd():
     #kubectl_call_pods = "kubectl --namespace {} get -o json pods --selector=app={}"
