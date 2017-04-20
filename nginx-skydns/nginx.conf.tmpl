@@ -42,6 +42,7 @@ resolver_timeout 5s;
 
 {{ $region := (getenv "REGION") }}
 {{ $domain := (getenv "DOMAIN") }}
+{{ $main_domain := (getenv "MAIN_DOMAIN") }}
 {{ $cluster := (getenv "CLUSTER") }}
 {{ $trusted := (getenv "TRUSTED") }}
 
@@ -97,6 +98,12 @@ server {
 
     # It to us is necessary for making that nginx used local DNS. In another way nginx does not fathom
     # set $dns $app_domain.ui.local;
+
+    location ^~ /.well-known {
+        allow all;
+        auth_basic off;
+        alias /etc/nginx/certs/.well-known/;
+    }
 
     #
     # Wide-open CORS config for nginx
@@ -178,7 +185,7 @@ server {
 server {
     listen              443 default_server deferred ssl; # spdy;
     server_name         _;
-    return 503;
+    #return 503;
 
     # SSL configuration
     # ssl_stapling on;
@@ -192,9 +199,11 @@ server {
     ssl_buffer_size 8k;
 
 
-    {{if (exists "/certs/trusted.crt")}}
+    {{if (exists "/etc/nginx/certs/fullchain.pem")}}
     # Should be trusted certificate from issuing authority
-    ssl_trusted_certificate /etc/nginx/certs/trusted.crt;
+    # ssl_trusted_certificate /etc/nginx/certs/trusted.crt;
+    ssl_certificate /etc/nginx/certs/fullchain.pem;
+    ssl_certificate_key /etc/nginx/certs/privkey.pem;
     {{else}}
     ssl_certificate /etc/nginx/certs/default.crt;
     ssl_certificate_key /etc/nginx/certs/default.key;
