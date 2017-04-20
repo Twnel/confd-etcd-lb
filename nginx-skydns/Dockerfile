@@ -13,7 +13,7 @@ RUN  apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ABF5BD827BD9BF62 &
      add-apt-repository -y ppa:certbot/certbot
 RUN apt-get update
 RUN apt-get install -y nginx curl host certbot
-RUN curl https://dl.eff.org/certbot-auto -O /usr/bin/certbot-auto
+RUN curl https://dl.eff.org/certbot-auto -o /usr/bin/certbot-auto
 RUN chmod +x /usr/bin/certbot-auto
 
 # Install confd
