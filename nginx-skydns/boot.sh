@@ -42,7 +42,7 @@ emailAddress=
 echo "admin:${HTPASSWD}" > /etc/nginx/.htpasswd
 openssl req -subj "$(echo -n "$SUBJ" | tr "\n" "/")" -x509 -nodes -days 365 -newkey rsa:2048 -keyout "$SSL_DIR/default.key" -out "$SSL_DIR/default.crt" -passin pass:$PASSPHRASE
 
- # certbot-auto -c /etc/letsencrypt/cli.ini certonly # -m "${CERT_EMAIL}" -d "${REGION}.${CLUSTER}.${MAIN_DOMAIN}"
+# certbot-auto -c /etc/letsencrypt/cli.ini certonly # -m "${CERT_EMAIL}" -d "${REGION}.${CLUSTER}.${MAIN_DOMAIN}"
 
 echo "[nginx] booting container. ETCD: $ETCD_SERVICE_ADDR"
 
