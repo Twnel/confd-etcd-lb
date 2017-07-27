@@ -11,7 +11,8 @@ confd_resolve () {
   export ETCD_SERVICE_ADDR=${ETCD_SERVICE_RESOLVE}:${ETCD_SERVICE_PORT}
 }
 confd_resolve
-export DOMAIN=${DOMAIN:-example.com}
+export DOMAIN=${DOMAIN:-example.(com)}
+export MAIN_DOMAIN=${MAIN_DOMAIN:-example.com}
 export REGION=${REGION:-api}
 export CLUSTER=${CLUSTER:-beta}
 export HTPASSWD="$(openssl passwd -apr1 ${HTPASSWD:-password})"
@@ -22,7 +23,7 @@ SSL_DIR="/etc/nginx/certs"
 
 # Set the wildcarded domain
 # we want to use
-MAIN_DOMAIN="*.${DOMAIN}"
+MAIN_DOMAIN="*.${MAIN_DOMAIN}"
 
 # A blank passphrase
 PASSPHRASE=""
@@ -40,6 +41,8 @@ emailAddress=
 
 echo "admin:${HTPASSWD}" > /etc/nginx/.htpasswd
 openssl req -subj "$(echo -n "$SUBJ" | tr "\n" "/")" -x509 -nodes -days 365 -newkey rsa:2048 -keyout "$SSL_DIR/default.key" -out "$SSL_DIR/default.crt" -passin pass:$PASSPHRASE
+
+# certbot-auto -c /etc/letsencrypt/cli.ini certonly # -m "${CERT_EMAIL}" -d "${REGION}.${CLUSTER}.${MAIN_DOMAIN}"
 
 echo "[nginx] booting container. ETCD: $ETCD_SERVICE_ADDR"
 

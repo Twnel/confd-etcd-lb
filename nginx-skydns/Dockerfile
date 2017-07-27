@@ -9,9 +9,12 @@ RUN apt-get install -y software-properties-common
 #    add-apt-repository -s "deb http://ppa.launchpad.net/chris-lea/nginx-devel/ubuntu trusty main"
 RUN  apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ABF5BD827BD9BF62 && \
      add-apt-repository "deb http://nginx.org/packages/mainline/ubuntu/ trusty nginx" && \
-     add-apt-repository -s "deb http://nginx.org/packages/mainline/ubuntu/ trusty nginx"
+     add-apt-repository -s "deb http://nginx.org/packages/mainline/ubuntu/ trusty nginx" && \
+     add-apt-repository -y ppa:certbot/certbot
 RUN apt-get update
-RUN apt-get install -y nginx curl host
+RUN apt-get install -y nginx curl host certbot
+RUN curl https://dl.eff.org/certbot-auto -o /usr/bin/certbot-auto
+RUN chmod +x /usr/bin/certbot-auto
 
 # Install confd
 RUN curl -L https://github.com/kelseyhightower/confd/releases/download/v0.10.0/confd-0.10.0-linux-amd64 -o confd
@@ -26,6 +29,9 @@ RUN mkdir -p /etc/confd/templates
 ADD *.tmpl /etc/confd/templates/
 ADD *.toml /etc/confd/conf.d/
 ADD nginx.conf /etc/nginx/
+ADD nginx.app /etc/nginx/
+ADD nginx.stream /etc/nginx/
+ADD cli.ini /etc/letsencrypt/
 
 # Remove default site
 # RUN rm -f /etc/nginx/sites-enabled/default
