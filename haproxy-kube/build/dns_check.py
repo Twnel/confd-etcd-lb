@@ -50,16 +50,21 @@ def set_etcd_services(kubectl_services, client):
     for service, match_port in loop_services(kubectl_services['items']):
         try:
             # Verify whether service uses sticky sessions
-            if service['sessionAffinity'] == 'ClientIP':
-                kubectl_call = subprocess.Popen(
-                    "kubectl get --namespace {} -o json endpoints {}".format(
-                        service['metadata']['namespace'],
-                        match_port['name']), stdout=subprocess.PIPE, shell=True)
-                kubectl_str = str(kubectl_call.stdout.read())
-                kubectl_service = json.loads(kubectl_str)
+            if service['spec']['sessionAffinity'] == 'ClientIP':
+                try:
+                    kubectl_call = subprocess.Popen(
+                        "kubectl get --namespace {} -o json endpoints {}".format(
+                            service['metadata']['namespace'],
+                            match_port['name']), stdout=subprocess.PIPE, shell=True)
+                    kubectl_str = str(kubectl_call.stdout.read())
+                    kubectl_service = json.loads(kubectl_str)
+                except ValueError as e:
+                    log.debug('Service not expected: {}, {}'.format(match_port['name'], e.message))
+                    continue
                 # Retrieve service related pods
                 subsets = kubectl_service['subsets'][0]
                 kubectl_pods = subsets['addresses']
+                match_port = subsets['ports'][0]
                 for pod in kubectl_pods:
                     yield write_host(service, match_port, pod['ip'], client)
             else:
