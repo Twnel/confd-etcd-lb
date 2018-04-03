@@ -79,12 +79,12 @@ def set_etcd_services(kubectl_services, client):
 def populate_etcd():
     client = etcd.Client(host=os.getenv('ETCD_SERVICE_HOST', 'etcd'), port=int(os.getenv('ETCD_SERVICE_PORT', 2379)))
     while True:
-        # modify DNS check to kube check
-        kubectl_call = subprocess.Popen("kubectl get --all-namespaces -o json services", stdout=subprocess.PIPE, shell=True)
-        kubectl_str = str(kubectl_call.stdout.read())
-        kubectl_services = json.loads(kubectl_str)
-        cluster_key = '/skydns/local/{}'.format(APP_ENV)
         try:
+            # modify DNS check to kube check
+            kubectl_call = subprocess.Popen("kubectl get --all-namespaces -o json services", stdout=subprocess.PIPE, shell=True)
+            kubectl_str = str(kubectl_call.stdout.read())
+            kubectl_services = json.loads(kubectl_str)
+            cluster_key = '/skydns/local/{}'.format(APP_ENV)
             etcd_leaves = client.read(cluster_key, recursive=True).leaves
             for key in set(
                 (app.key for app in etcd_leaves if ':' in app.key.split('/')[-1])).difference(
@@ -93,6 +93,8 @@ def populate_etcd():
         except etcd.EtcdKeyNotFound:
             client.write(cluster_key, None, dir=True)
             log.info('NO key: {}'.format(cluster_key))
+        except ValueError as e:
+            log.exception(e)
 
         time.sleep(os.getenv('ETCD_SERVICE_INTERVAL', 10))
 
